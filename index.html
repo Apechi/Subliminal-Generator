@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="https://subliminalgenerator.com" />
+    <title>Subliminal Generator - Create Custom Affirmations</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f8ff;
+        color: #333;
+        line-height: 1.6;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #4a90e2;
+        text-align: center;
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      select,
+      input[type="range"] {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+      button {
+        background-color: #4a90e2;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #357abd;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 14px;
+        color: #777;
+      }
+      #preview {
+        margin-top: 20px;
+        text-align: center;
+      }
+      #audioPreview {
+        width: 100%;
+      }
+      #loading {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/wav-encoder@0.0.1/dist/wav-encoder.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Subliminal Generator</h1>
+      <h2>Choose API Key</h2>
+      <select id="apiKey">
+        <option value="DEFAULT_KEY">Default API Key</option>
+        <option value="CUSTOM_KEY">Custom API Key</option>
+      </select>
+      <input
+        type="text"
+        id="customApiKey"
+        placeholder="Enter your custom API key"
+        style="display: none"
+      />
+
+      <form id="subliminalForm">
+        <h2>1. Enter Your Affirmations</h2>
+        <textarea
+          id="affirmations"
+          placeholder="Enter your affirmations, one per line..."
+        ></textarea>
+
+        <h2>2. Choose Voice</h2>
+        <select id="voice">
+          <option value="en-US-Standard-A">US English (Female)</option>
+          <option value="en-US-Standard-B">US English (Male)</option>
+          <option value="en-GB-Standard-A">British English (Female)</option>
+          <option value="en-GB-Standard-B">British English (Male)</option>
+        </select>
+
+        <h2>3. Adjust TTS Speed</h2>
+        <input
+          type="range"
+          id="tts_speed"
+          min="0.25"
+          max="4"
+          step="0.25"
+          value="1"
+        />
+        <span id="speed_value">1x</span>
+
+        <h2>4. Choose Solfeggio Frequency</h2>
+        <select id="solfeggio_freq">
+          <option value="396">396 Hz - Liberating Guilt and Fear</option>
+          <option value="417">417 Hz - Facilitating Change</option>
+          <option value="528">528 Hz - Transformation and Miracles</option>
+          <option value="639">639 Hz - Connecting Relationships</option>
+          <option value="741">741 Hz - Expression/Solutions</option>
+          <option value="852">852 Hz - Returning to Spiritual Order</option>
+        </select>
+
+        <h2>5. Adjust Volumes</h2>
+        <label for="tts_volume">Text-to-Speech Volume:</label>
+        <input type="range" id="tts_volume" min="0" max="100" value="50" />
+
+        <label for="freq_volume">Frequency Volume:</label>
+        <input type="range" id="freq_volume" min="0" max="100" value="50" />
+
+        <button type="button" onclick="generateSubliminal()">
+          Create Subliminal Audio
+        </button>
+      </form>
+
+      <div id="loading">
+        <p>Generating your subliminal audio... Please wait.</p>
+      </div>
+
+      <div id="preview" style="display: none">
+        <h2>Preview</h2>
+        <audio id="audioPreview" controls></audio>
+        <p id="downloadLink"></p>
+      </div>
+    </div>
+    <script>
+      document.getElementById("apiKey").addEventListener("change", function () {
+        const customApiKeyField = document.getElementById("customApiKey");
+        if (this.value === "CUSTOM_KEY") {
+          customApiKeyField.style.display = "block";
+        } else {
+          customApiKeyField.style.display = "none";
+        }
+      });
+    </script>
+
+    <script>
+      document
+        .getElementById("tts_speed")
+        .addEventListener("input", function () {
+          document.getElementById("speed_value").textContent = this.value + "x";
+        });
+
+      async function generateSubliminal() {
+        const affirmations = document.getElementById("affirmations").value;
+        const voice = document.getElementById("voice").value;
+        const ttsSpeed = document.getElementById("tts_speed").value;
+        const solfeggioFreq = document.getElementById("solfeggio_freq").value;
+        const ttsVolume = document.getElementById("tts_volume").value / 100;
+        const freqVolume = document.getElementById("freq_volume").value / 100;
+
+        const apiKeySelect = document.getElementById("apiKey");
+        const apiKey =
+          apiKeySelect.value === "CUSTOM_KEY"
+            ? document.getElementById("customApiKey").value
+            : "YOUR_DEFAULT_API_KEY";
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("preview").style.display = "none";
+
+        try {
+          // Google TTS API call
+          const ttsResponse = await fetch(
+            `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                input: { text: affirmations },
+                voice: { languageCode: "en-US", name: voice },
+                audioConfig: {
+                  audioEncoding: "MP3",
+                  speakingRate: parseFloat(ttsSpeed),
+                },
+              }),
+            }
+          );
+
+          if (!ttsResponse.ok) {
+            const errorResponse = await ttsResponse.json();
+            throw new Error(
+              `Google TTS API Error: ${errorResponse.error.message}`
+            );
+          }
+
+          const ttsData = await ttsResponse.json();
+          const ttsAudioBuffer = await fetch(
+            `data:audio/mp3;base64,${ttsData.audioContent}`
+          ).then((res) => res.arrayBuffer());
+
+          // (Rest of the code remains unchanged)
+        } catch (error) {
+          console.error("Error generating subliminal:", error);
+          alert(
+            "An error occurred while generating the subliminal audio. Please try again."
+          );
+          document.getElementById("loading").style.display = "none";
+        }
+      }
+
+      async function generateFrequencySound(frequency, volume, duration) {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const sampleRate = audioContext.sampleRate;
+        const length = Math.floor(sampleRate * duration);
+        const buffer = audioContext.createBuffer(1, length, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < length; i++) {
+          data[i] =
+            volume * Math.sin((2 * Math.PI * frequency * i) / sampleRate);
+        }
+
+        return bufferToWav(buffer);
+      }
+
+      function bufferToWav(buffer) {
+        const numOfChan = buffer.numberOfChannels;
+        const length = buffer.length * numOfChan * 2 + 44;
+        const out = new ArrayBuffer(length);
+        const view = new DataView(out);
+        const channels = [];
+        let sample;
+        let offset = 0;
+        let pos = 0;
+
+        // write WAVE header
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); // file length minus RIFF chunk length
+        setUint32(0x45564157); // "WAVE"
+        setUint32(0x20746d66); // "fmt "
+        setUint32(16); // fmt chunk length
+        setUint16(1); // format (1 = PCM)
+        setUint16(numOfChan); // number of channels
+        setUint32(buffer.sampleRate); // sample rate
+        setUint32(buffer.sampleRate * 2 * numOfChan); // byte rate
+        setUint16(numOfChan * 2); // block align
+        setUint16(16); // bits per sample
+        setUint32(0x61746164); // "data"
+        setUint32(length - pos - 4); // data chunk length
+
+        for (let i = 0; i < buffer.numberOfChannels; i++)
+          channels.push(buffer.getChannelData(i));
+
+        while (pos < length) {
+          for (let i = 0; i < numOfChan; i++) {
+            sample = Math.max(-1, Math.min(1, channels[i][offset]));
+            sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+            view.setInt16(pos, sample, true);
+            pos += 2;
+          }
+          offset++;
+        }
+
+        return out;
+
+        function setUint16(data) {
+          view.setUint16(pos, data, true);
+          pos += 2;
+        }
+
+        function setUint32(data) {
+          view.setUint32(pos, data, true);
+          pos += 4;
+        }
+      }
+
+      async function mergeAudios(ttsBuffer, freqBuffer, ttsVolume, freqVolume) {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+
+        // Decode audio data
+        const [ttsAudioBuffer, freqAudioBuffer] = await Promise.all([
+          audioContext.decodeAudioData(ttsBuffer.slice(0)),
+          audioContext.decodeAudioData(freqBuffer.slice(0)),
+        ]);
+
+        // Create a new buffer for the combined audio (stereo)
+        const combinedLength = Math.max(
+          ttsAudioBuffer.length,
+          freqAudioBuffer.length
+        );
+        const combinedBuffer = audioContext.createBuffer(
+          2, // 2 channels for stereo
+          combinedLength,
+          audioContext.sampleRate
+        );
+
+        // Mix the two audio buffers
+        const ttsChannel = ttsAudioBuffer.getChannelData(0);
+        const freqChannel = freqAudioBuffer.getChannelData(0);
+        const combinedLeftChannel = combinedBuffer.getChannelData(0);
+        const combinedRightChannel = combinedBuffer.getChannelData(1);
+
+        for (let i = 0; i < combinedLength; i++) {
+          const tts = i < ttsChannel.length ? ttsChannel[i] * ttsVolume : 0;
+          const freq = i < freqChannel.length ? freqChannel[i] * freqVolume : 0;
+          const combinedSample = tts + freq;
+
+          // Set the same value for both left and right channels
+          combinedLeftChannel[i] = combinedSample;
+          combinedRightChannel[i] = combinedSample;
+        }
+
+        // Convert AudioBuffer to WAV ArrayBuffer
+        const wavBuffer = bufferToWav(combinedBuffer);
+        return wavBuffer;
+      }
+    </script>
+  </body>
+</html>
