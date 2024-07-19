@@ -12,7 +12,7 @@ A basic web application to create subliminal messages using Text-to-Speech (TTS)
 
 ## How to Use
 
-1. **Enter Your Custom API Key**: Input your own API key or use the default one (note: the default key is not currently functional).
+1. **Enter Your Custom Google Cloud API Key**: Input your own API key or use the default one (note: the default key is not currently functional).
 2. **Enter Affirmation**: Type the affirmation text you want to use.
 3. **Choose TTS Voice**: Select the TTS voice you prefer.
 4. **Adjust TTS Speed**: Set the speed of the TTS playback.
