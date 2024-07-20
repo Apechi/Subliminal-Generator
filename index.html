@@ -212,11 +212,20 @@
           ).then((res) => res.arrayBuffer());
           console.log("Fetched and converted TTS audio to ArrayBuffer.");
 
-          // Generate solfeggio frequency sound
+          // Decode TTS audio to get its duration
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const decodedTtsBuffer = await audioContext.decodeAudioData(
+            ttsAudioBuffer.slice(0)
+          );
+          const ttsDuration = decodedTtsBuffer.duration;
+          console.log(`TTS audio duration: ${ttsDuration} seconds`);
+
+          // Generate solfeggio frequency sound for the same duration as TTS
           const freqBuffer = await generateFrequencySound(
             solfeggioFreq,
             freqVolume,
-            60 // duration in seconds
+            ttsDuration
           );
           console.log("Generated solfeggio frequency sound.");
 
