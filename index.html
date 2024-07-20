@@ -2,7 +2,7 @@
 <html>
   <head>
     <base href="https://subliminalgenerator.com" />
-    <title>Subliminal Generator</title>
+    <title>Subliminal Generator - Create Custom Affirmations</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -178,6 +178,8 @@
         document.getElementById("preview").style.display = "none";
 
         try {
+          console.log("Making Google TTS API call...");
+
           // Google TTS API call
           const ttsResponse = await fetch(
             `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
@@ -203,16 +205,45 @@
           }
 
           const ttsData = await ttsResponse.json();
+          console.log("TTS response received.");
+
           const ttsAudioBuffer = await fetch(
             `data:audio/mp3;base64,${ttsData.audioContent}`
           ).then((res) => res.arrayBuffer());
+          console.log("Fetched and converted TTS audio to ArrayBuffer.");
 
-          // (Rest of the code remains unchanged)
+          // Generate solfeggio frequency sound
+          const freqBuffer = await generateFrequencySound(
+            solfeggioFreq,
+            freqVolume,
+            60 // duration in seconds
+          );
+          console.log("Generated solfeggio frequency sound.");
+
+          // Merge the TTS audio and frequency sound
+          const combinedBuffer = await mergeAudios(
+            ttsAudioBuffer,
+            freqBuffer,
+            ttsVolume,
+            freqVolume
+          );
+          console.log("Merged TTS audio and frequency sound.");
+
+          const audioBlob = new Blob([combinedBuffer], { type: "audio/wav" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const audioPreview = document.getElementById("audioPreview");
+          audioPreview.src = audioUrl;
+          document.getElementById("preview").style.display = "block";
+          document.getElementById(
+            "downloadLink"
+          ).innerHTML = `<a href="${audioUrl}" download="subliminal.wav">Download your subliminal audio</a>`;
         } catch (error) {
           console.error("Error generating subliminal:", error);
           alert(
             "An error occurred while generating the subliminal audio. Please try again."
           );
+        } finally {
           document.getElementById("loading").style.display = "none";
         }
       }
